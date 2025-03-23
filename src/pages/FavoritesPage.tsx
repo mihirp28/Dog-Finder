@@ -1,5 +1,4 @@
 // src/pages/FavoritesPage.tsx
-
 import React, { useEffect, useState } from 'react';
 import { useFavorites } from '../context/FavoritesContext';
 import { getDogsByIds, Dog, matchDogs } from '../api';
@@ -12,7 +11,9 @@ import {
   Card,
   CardContent,
   CardMedia,
+  Toolbar,
 } from '@mui/material';
+import NavigationBar from '../components/NavigationBar';
 
 const FavoritesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -43,7 +44,6 @@ const FavoritesPage: React.FC = () => {
         return;
       }
       const matchedId = await matchDogs(favoriteIds);
-      // store matchedId in state or navigate to match page
       navigate('/match', { state: { matchedId } });
     } catch (err) {
       console.error(err);
@@ -52,36 +52,42 @@ const FavoritesPage: React.FC = () => {
   };
 
   return (
-    <Container>
-      <Typography variant="h4" marginY={2}>
-        Your Favorites
-      </Typography>
-      {error && <Typography color="error">{error}</Typography>}
-      <Button variant="contained" onClick={handleMatch} disabled={favoriteIds.length === 0}>
-        Generate a Match
-      </Button>
-      <Box display="flex" flexWrap="wrap" gap={2} marginTop={2}>
-        {favoriteDogs.map((dog) => (
-          <Card key={dog.id} style={{ width: 250 }}>
-            <CardMedia
-              component="img"
-              image={dog.img}
-              alt={dog.name}
-              height="200"
-            />
-            <CardContent>
-              <Typography variant="h6">{dog.name}</Typography>
-              <Typography>Breed: {dog.breed}</Typography>
-              <Typography>Age: {dog.age}</Typography>
-              <Typography>ZIP: {dog.zip_code}</Typography>
-              <Button variant="outlined" onClick={() => removeFavorite(dog.id)}>
-                Remove
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
-    </Container>
+    <>
+      {/* Fixed Navigation Bar with spacer */}
+      <NavigationBar />
+      <Toolbar />
+
+      <Container>
+        <Typography variant="h4" marginY={2}>
+          Your Favorites
+        </Typography>
+        {error && <Typography color="error">{error}</Typography>}
+        <Button variant="contained" onClick={handleMatch} disabled={favoriteIds.length === 0}>
+          Generate a Match
+        </Button>
+        <Box display="flex" flexWrap="wrap" gap={2} marginTop={2}>
+          {favoriteDogs.map((dog) => (
+            <Card key={dog.id} style={{ width: 250 }}>
+              <CardMedia
+                component="img"
+                image={dog.img}
+                alt={dog.name}
+                height="200"
+              />
+              <CardContent>
+                <Typography variant="h6">{dog.name}</Typography>
+                <Typography>Breed: {dog.breed}</Typography>
+                <Typography>Age: {dog.age}</Typography>
+                <Typography>ZIP: {dog.zip_code}</Typography>
+                <Button variant="outlined" onClick={() => removeFavorite(dog.id)}>
+                  Remove
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      </Container>
+    </>
   );
 };
 

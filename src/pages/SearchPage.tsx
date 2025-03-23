@@ -1,54 +1,40 @@
 // src/pages/SearchPage.tsx
 
-import React, { useEffect, useState } from 'react';
-import {
-  Container,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Button,
-  Box
-} from '@mui/material';
-// IMPORTANT: import SelectChangeEvent
+import React, { useState, useEffect } from 'react';
+import { Container, Box, Toolbar } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
-import { useNavigate } from 'react-router-dom';
 
+import NavigationBar from '../components/NavigationBar';
+import FilterBar from '../components/FilterBar';
+import PaginationControls from '../components/PaginationControls';
+import Footer from '../components/Footer';
+import DogCard from '../components/DogCard';
 import { getAllBreeds, searchDogs, getDogsByIds, Dog } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
-import DogCard from '../components/DogCard';
 
 const SearchPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { addFavorite, favoriteIds } = useFavorites();
+  const { addFavorite } = useFavorites();
 
-  // State for the list of all possible breeds
+  // Filters, sorting, and pagination states
   const [breeds, setBreeds] = useState<string[]>([]);
   const [selectedBreed, setSelectedBreed] = useState<string>('');
-
-  // Sorting: "breed:asc" by default
   const [sortParam, setSortParam] = useState('breed:asc');
-
-  // Pagination
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [currentFrom, setCurrentFrom] = useState(0);
-  const [pageSize] = useState(25); // default 25 per page
+  const pageSize = 25;
 
-  // Load all breed options on mount
   useEffect(() => {
     (async () => {
       try {
         const allBreeds = await getAllBreeds();
         setBreeds(allBreeds);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching breeds:', err);
       }
     })();
   }, []);
 
-  // Whenever filter/sort/pagination changes, fetch a new batch of dogs
   useEffect(() => {
     (async () => {
       try {
@@ -58,98 +44,82 @@ const SearchPage: React.FC = () => {
           size: pageSize,
           from: currentFrom,
         };
-
-        // Step 1: Fetch list of matching IDs
         const searchRes = await searchDogs(queryParams);
         setTotalResults(searchRes.total);
 
-        // Step 2: Fetch the dog objects by those IDs
         const dogData = await getDogsByIds(searchRes.resultIds);
         setDogs(dogData);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching dogs:', err);
       }
     })();
   }, [selectedBreed, sortParam, currentFrom, pageSize]);
 
-  // IMPORTANT: Use SelectChangeEvent<string> for MUI's Select onChange
+  // Filter changes
   const handleBreedChange = (event: SelectChangeEvent<string>) => {
     setSelectedBreed(event.target.value);
-    setCurrentFrom(0); // reset pagination if filter changes
+    setCurrentFrom(0);
   };
 
+  // Toggle sorting
   const handleSortChange = () => {
-    // Toggle between breed:asc and breed:desc
     const newSort = sortParam === 'breed:asc' ? 'breed:desc' : 'breed:asc';
     setSortParam(newSort);
     setCurrentFrom(0);
   };
 
-  const handleNextPage = () => {
-    setCurrentFrom((prev) => prev + pageSize);
-  };
+  // Pagination next/prev
+  const handleNextPage = () => setCurrentFrom(prev => prev + pageSize);
+  const handlePrevPage = () => setCurrentFrom(prev => Math.max(0, prev - pageSize));
 
-  const handlePrevPage = () => {
-    setCurrentFrom((prev) => Math.max(0, prev - pageSize));
+  // NEW: Jump to a specific page
+  const handlePageJump = (pageNumber: number) => {
+    const newFrom = (pageNumber - 1) * pageSize;
+    setCurrentFrom(newFrom);
   };
 
   return (
-    <Container>
-      {/* Header Row */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" marginTop={2}>
-        <Typography variant="h4">Search Dogs</Typography>
-        <Button variant="outlined" onClick={() => navigate('/favorites')}>
-          Favorites ({favoriteIds.length})
-        </Button>
-      </Box>
+    <>
+      <NavigationBar />
+      <Toolbar /> {/* Spacer for fixed navbar */}
+      <Container>
+        <FilterBar
+          selectedBreed={selectedBreed}
+          handleBreedChange={handleBreedChange}
+          breeds={breeds}
+          sortParam={sortParam}
+          handleSortChange={handleSortChange}
+        />
 
-      {/* Filter & Sort Controls */}
-      <Box display="flex" gap={2} marginY={2}>
-        {/* Breed Filter */}
-        <FormControl variant="outlined">
-          <InputLabel id="breed-label">Breed</InputLabel>
-          <Select
-            labelId="breed-label"
-            label="Breed"
-            value={selectedBreed}
-            onChange={handleBreedChange}
-            style={{ minWidth: 200 }}
-          >
-            <MenuItem value="">All Breeds</MenuItem>
-            {breeds.map((breed) => (
-              <MenuItem key={breed} value={breed}>
-                {breed}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        {/* Top pagination controls */}
+        {/* <PaginationControls
+          currentFrom={currentFrom}
+          pageSize={pageSize}
+          totalResults={totalResults}
+          handleNextPage={handleNextPage}
+          handlePrevPage={handlePrevPage}
+          handlePageJump={handlePageJump} // pass the new callback
+        /> */}
 
-        {/* Sort Toggle */}
-        <Button onClick={handleSortChange}>
-          Sort by Breed: {sortParam === 'breed:asc' ? 'Ascending' : 'Descending'}
-        </Button>
-      </Box>
+        {/* Results */}
+        <Box display="flex" flexWrap="wrap" gap={6}>
+          {dogs.map(dog => (
+            <DogCard key={dog.id} dog={dog} onFavorite={() => addFavorite(dog.id)} />
+          ))}
+        </Box>
 
-      {/* Pagination Info & Controls */}
-      <Typography variant="body1">
-        Showing {dogs.length} of {totalResults} results
-      </Typography>
-      <Box display="flex" gap={2} marginY={2}>
-        <Button disabled={currentFrom === 0} onClick={handlePrevPage}>
-          Prev
-        </Button>
-        <Button disabled={currentFrom + pageSize >= totalResults} onClick={handleNextPage}>
-          Next
-        </Button>
-      </Box>
-
-      {/* Dog Cards */}
-      <Box display="flex" flexWrap="wrap" gap={2}>
-        {dogs.map((dog) => (
-          <DogCard key={dog.id} dog={dog} onFavorite={() => addFavorite(dog.id)} />
-        ))}
-      </Box>
-    </Container>
+        {/* Bottom pagination controls */}
+        <PaginationControls
+          currentFrom={currentFrom}
+          pageSize={pageSize}
+          totalResults={totalResults}
+          handleNextPage={handleNextPage}
+          handlePrevPage={handlePrevPage}
+          handlePageJump={handlePageJump}
+        />
+      </Container>
+      <Footer />
+    </>
   );
 };
 
