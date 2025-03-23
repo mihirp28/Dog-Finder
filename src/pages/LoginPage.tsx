@@ -6,6 +6,14 @@ import { useFavorites } from '../context/FavoritesContext';
 import { Container, TextField, Button, Typography, Paper, Box } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 
+
+// Simple email validation function
+const isValidEmail = (email: string) => {
+  // Basic regex for email validation
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+};
+
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { loadFavorites } = useFavorites();
@@ -15,11 +23,25 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
+     // Validate required fields and email format
+     if (!name.trim() && !email.trim()) {
+      setError('Please enter your name and email.');
+      return;
+    }
+     if (!name.trim()) {
+      setError('Please enter your name.');
+      return;
+    }
+    if (!email.trim()) {
+      setError('Please enter your email.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
     try {
-      if (!name || !email) {
-        setError('Please fill in all fields.');
-        return;
-      }
       await login(name, email);
       loginUser(email)
       // Load favorites for this user using email as key
