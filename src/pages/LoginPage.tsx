@@ -1,21 +1,14 @@
 // src/pages/LoginPage.tsx
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../api';
-
-import { 
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Container,
-  Paper
-} from '@mui/material';
+import { useFavorites } from '../context/FavoritesContext';
+import { Container, TextField, Button, Typography, Paper, Box } from '@mui/material';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  
+  const { loadFavorites } = useFavorites();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -27,7 +20,8 @@ const LoginPage: React.FC = () => {
         return;
       }
       await login(name, email);
-      // If successful, navigate to search
+      // Load favorites for this user using email as key
+      loadFavorites(email);
       navigate('/search');
     } catch (err) {
       console.error(err);

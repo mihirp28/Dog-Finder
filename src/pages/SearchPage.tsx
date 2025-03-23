@@ -22,7 +22,7 @@ const SearchPage: React.FC = () => {
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [currentFrom, setCurrentFrom] = useState(0);
-  const pageSize = 25;
+  const pageSize = 28;
 
   useEffect(() => {
     (async () => {
