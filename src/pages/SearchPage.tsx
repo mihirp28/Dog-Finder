@@ -14,6 +14,7 @@ import { useFavorites } from '../context/FavoritesContext';
 
 const SearchPage: React.FC = () => {
   const { addFavorite } = useFavorites();
+  const { removeFavorite } = useFavorites();
 
   // Filters, sorting, and pagination states
   const [breeds, setBreeds] = useState<string[]>([]);
@@ -104,7 +105,7 @@ const SearchPage: React.FC = () => {
         {/* Results */}
         <Box display="flex" flexWrap="wrap" gap={6}>
           {dogs.map(dog => (
-            <DogCard key={dog.id} dog={dog} onFavorite={() => addFavorite(dog.id)} />
+            <DogCard key={dog.id} dog={dog} onFavorite={() => addFavorite(dog.id)} onUnfavorite={() => removeFavorite(dog.id)} />
           ))}
         </Box>
 
