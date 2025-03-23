@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { login } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
 import { Container, TextField, Button, Typography, Paper, Box } from '@mui/material';
+import { useAuth } from '../context/AuthContext';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { loadFavorites } = useFavorites();
-
+  const { loginUser } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -20,6 +21,7 @@ const LoginPage: React.FC = () => {
         return;
       }
       await login(name, email);
+      loginUser(email)
       // Load favorites for this user using email as key
       loadFavorites(email);
       navigate('/search');

@@ -4,15 +4,18 @@ import { AppBar, Toolbar, Box, Button, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
+import { useAuth } from '../context/AuthContext';
 
 const NavigationBar: React.FC = () => {
   const navigate = useNavigate();
   const { favoriteIds, clearFavorites } = useFavorites();
+  const { logoutUser } = useAuth();
 
   const handleLogout = async () => {
     try {
       await logout();
       clearFavorites(); // clear favorites when logging out
+      logoutUser(); // clear authentication
       navigate('/'); // redirect to login page
     } catch (error) {
       console.error('Logout failed', error);
