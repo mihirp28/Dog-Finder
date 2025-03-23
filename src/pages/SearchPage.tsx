@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Container, Box, Toolbar } from '@mui/material';
-// import { SelectChangeEvent } from '@mui/material/Select';
+import { useLocation } from 'react-router-dom';
 
 import NavigationBar from '../components/NavigationBar';
 import FilterBar from '../components/FilterBar';
@@ -12,19 +12,27 @@ import DogCard from '../components/DogCard';
 import { getAllBreeds, searchDogs, getDogsByIds, Dog } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
 
-const SearchPage: React.FC = () => {
-  const { addFavorite } = useFavorites();
-  const { removeFavorite } = useFavorites();
+function useQuery() {
+  return new URLSearchParams(useLocation().search);
+}
 
-  // Filters, sorting, and pagination states
+const SearchPage: React.FC = () => {
+  const query = useQuery();
+  const nameFilter = query.get('name') || ''; // The dog name typed in NavBar
+
+  const { addFavorite, removeFavorite } = useFavorites();
+
+  // Breed filter, sorting, pagination
   const [breeds, setBreeds] = useState<string[]>([]);
   const [selectedBreed, setSelectedBreed] = useState<string>('');
   const [sortParam, setSortParam] = useState('breed:asc');
   const [dogs, setDogs] = useState<Dog[]>([]);
+  const [filteredDogs, setFilteredDogs] = useState<Dog[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [currentFrom, setCurrentFrom] = useState(0);
   const pageSize = 28;
 
+  // Load all breeds
   useEffect(() => {
     (async () => {
       try {
@@ -36,6 +44,7 @@ const SearchPage: React.FC = () => {
     })();
   }, []);
 
+  // Fetch dogs by breed/pagination
   useEffect(() => {
     (async () => {
       try {
@@ -56,8 +65,26 @@ const SearchPage: React.FC = () => {
     })();
   }, [selectedBreed, sortParam, currentFrom, pageSize]);
 
-  // Updated: handleBreedChange now receives (event, value)
-  const handleBreedChange = (event: React.SyntheticEvent, value: string | null) => {
+  // Client-side filter by name
+  useEffect(() => {
+    if (!nameFilter.trim()) {
+      // No name param => show all dogs
+      setFilteredDogs(dogs);
+    } else {
+      // Filter ignoring case, partial match
+      const lowerName = nameFilter.toLowerCase();
+      const filtered = dogs.filter((d) =>
+        d.name.toLowerCase().includes(lowerName)
+      );
+      setFilteredDogs(filtered);
+    }
+  }, [nameFilter, dogs]);
+
+  // Breed filter changes
+  const handleBreedChange = (
+    event: React.SyntheticEvent,
+    value: string | null
+  ) => {
     setSelectedBreed(value || '');
     setCurrentFrom(0);
   };
@@ -69,11 +96,9 @@ const SearchPage: React.FC = () => {
     setCurrentFrom(0);
   };
 
-  // Pagination next/prev
-  const handleNextPage = () => setCurrentFrom(prev => prev + pageSize);
-  const handlePrevPage = () => setCurrentFrom(prev => Math.max(0, prev - pageSize));
-
-  // NEW: Jump to a specific page
+  // Pagination
+  const handleNextPage = () => setCurrentFrom((prev) => prev + pageSize);
+  const handlePrevPage = () => setCurrentFrom((prev) => Math.max(0, prev - pageSize));
   const handlePageJump = (pageNumber: number) => {
     const newFrom = (pageNumber - 1) * pageSize;
     setCurrentFrom(newFrom);
@@ -92,24 +117,17 @@ const SearchPage: React.FC = () => {
           handleSortChange={handleSortChange}
         />
 
-        {/* Top pagination controls */}
-        {/* <PaginationControls
-          currentFrom={currentFrom}
-          pageSize={pageSize}
-          totalResults={totalResults}
-          handleNextPage={handleNextPage}
-          handlePrevPage={handlePrevPage}
-          handlePageJump={handlePageJump} // pass the new callback
-        /> */}
-
-        {/* Results */}
         <Box display="flex" flexWrap="wrap" gap={6}>
-          {dogs.map(dog => (
-            <DogCard key={dog.id} dog={dog} onFavorite={() => addFavorite(dog.id)} onUnfavorite={() => removeFavorite(dog.id)} />
+          {filteredDogs.map((dog) => (
+            <DogCard
+              key={dog.id}
+              dog={dog}
+              onFavorite={() => addFavorite(dog.id)}
+              onUnfavorite={() => removeFavorite(dog.id)}
+            />
           ))}
         </Box>
 
-        {/* Bottom pagination controls */}
         <PaginationControls
           currentFrom={currentFrom}
           pageSize={pageSize}

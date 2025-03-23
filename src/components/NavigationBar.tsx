@@ -1,36 +1,54 @@
 // src/components/NavigationBar.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {
   AppBar,
   Toolbar,
   Box,
   Typography,
   Badge,
-  IconButton
+  IconButton,
+  Paper,
+  InputBase
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, createSearchParams } from 'react-router-dom';
 import { logout } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAuth } from '../context/AuthContext';
 
 // MUI Icons
-import SearchIcon from '@mui/icons-material/Search';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import LogoutIcon from '@mui/icons-material/Logout';
+import SearchIcon from '@mui/icons-material/Search';
 
 const NavigationBar: React.FC = () => {
   const navigate = useNavigate();
   const { favoriteIds, clearFavorites } = useFavorites();
   const { logoutUser } = useAuth();
 
+  // Local state for the user’s typed dog name
+  const [searchName, setSearchName] = useState('');
+
   const handleLogout = async () => {
     try {
       await logout();
-      clearFavorites(); 
-      logoutUser(); 
+      clearFavorites();
+      logoutUser();
       navigate('/');
     } catch (error) {
       console.error('Logout failed', error);
+    }
+  };
+
+  // Called when user presses Enter or clicks the search icon
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchName.trim()) {
+      navigate({
+        pathname: '/search',
+        search: `?${createSearchParams({ name: searchName })}`,
+      });
+    } else {
+      navigate('/search');
     }
   };
 
@@ -44,8 +62,8 @@ const NavigationBar: React.FC = () => {
         left: 0,
         right: 0,
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        backgroundColor: '#fff', // White background
-        color: 'black',          // Black text/icons
+        backgroundColor: '#fff',
+        color: 'black',
       }}
     >
       <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -78,37 +96,37 @@ const NavigationBar: React.FC = () => {
           </Typography>
         </Box>
 
-        {/* Center: Nav Icons (LinkedIn-style) */}
+        {/* Center: "Paper" search bar */}
         <Box
-          sx={{
-            display: 'flex',
-            gap: 4,
-            alignItems: 'center',
-          }}
+          component="form"
+          onSubmit={handleSearchSubmit}
+          sx={{ flexGrow: 1, maxWidth: 400, mx: 4 }}
         >
-          {/* Search */}
-          <IconButton
-            onClick={() => navigate('/search')}
+          <Paper
             sx={{
+              p: '4px 8px',
               display: 'flex',
-              flexDirection: 'column',
-              color: 'inherit',
-              padding: 0,
+              alignItems: 'center',
+              backgroundColor: '#f4f4f4', // Gray background
+              borderRadius: '8px',
             }}
           >
-            <SearchIcon />
-            <Typography variant="caption">Search</Typography>
-          </IconButton>
+            <SearchIcon sx={{ color: '#666', mr: 1 }} />
+            <InputBase
+              sx={{ flex: 1 }}
+              placeholder="Search"
+              inputProps={{ 'aria-label': 'search' }}
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+            />
+          </Paper>
+        </Box>
 
-          {/* Favorites with Badge */}
+        {/* Right: Favorites + Logout */}
+        <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
           <IconButton
             onClick={() => navigate('/favorites')}
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              color: 'inherit',
-              padding: 0,
-            }}
+            sx={{ color: 'inherit', flexDirection: 'column' }}
           >
             <Badge
               badgeContent={favoriteIds.length}
@@ -126,15 +144,9 @@ const NavigationBar: React.FC = () => {
             <Typography variant="caption">Favorites</Typography>
           </IconButton>
 
-          {/* Logout */}
           <IconButton
             onClick={handleLogout}
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              color: 'inherit',
-              padding: 0,
-            }}
+            sx={{ color: 'inherit', flexDirection: 'column' }}
           >
             <LogoutIcon />
             <Typography variant="caption">Logout</Typography>
