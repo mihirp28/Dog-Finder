@@ -43,7 +43,7 @@ const NavigationBar: React.FC = () => {
         >
           <Box
             component="img"
-            src="/assets/brand-logo.png"
+            src={`${process.env.PUBLIC_URL}/assets/brand-logo.png`}
             alt="Brand Logo"
             sx={{
               width: '100%',
