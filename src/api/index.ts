@@ -87,3 +87,25 @@ export async function matchDogs(ids: string[]): Promise<string> {
   const { data } = await apiClient.post<MatchResponse>('/dogs/match', ids);
   return data.match; // returns the matched dog's ID
 }
+
+// --- Add Location API support below ---
+
+export interface Location {
+  zip_code: string;
+  latitude: number;
+  longitude: number;
+  city: string;
+  state: string;
+  county: string;
+}
+
+export interface Coordinates {
+  lat: number;
+  lon: number;
+}
+
+export async function getLocations(zipCodes: string[]): Promise<Location[]> {
+  // POST /locations with an array of ZIP codes
+  const { data } = await apiClient.post<Location[]>('/locations', zipCodes);
+  return data;
+}
