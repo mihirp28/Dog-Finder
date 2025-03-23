@@ -55,9 +55,9 @@ const SearchPage: React.FC = () => {
     })();
   }, [selectedBreed, sortParam, currentFrom, pageSize]);
 
-  // Filter changes
-  const handleBreedChange = (event: SelectChangeEvent<string>) => {
-    setSelectedBreed(event.target.value);
+  // Updated: handleBreedChange now receives (event, value)
+  const handleBreedChange = (event: React.SyntheticEvent, value: string | null) => {
+    setSelectedBreed(value || '');
     setCurrentFrom(0);
   };
 

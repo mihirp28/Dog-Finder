@@ -26,8 +26,8 @@ const NavigationBar: React.FC = () => {
     <AppBar
       position="fixed"
       sx={{
-        margin: 1,
-        borderRadius: 8,
+        margin: 0,
+        borderRadius: 0,
         top: 0,
         left: 0,
         right: 0,
