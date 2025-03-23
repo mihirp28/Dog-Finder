@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Container, Box, Toolbar } from '@mui/material';
-import { SelectChangeEvent } from '@mui/material/Select';
+// import { SelectChangeEvent } from '@mui/material/Select';
 
 import NavigationBar from '../components/NavigationBar';
 import FilterBar from '../components/FilterBar';
