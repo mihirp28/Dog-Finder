@@ -145,8 +145,14 @@ const SearchPage: React.FC = () => {
               handlePageJump={handlePageJump}
             /> */}
 
-            {/* DOG CARDS */}
-            <Box display="flex" flexWrap="wrap" gap={8}>
+            {/* DOG CARDS with a responsive grid */}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                gap: 4,
+              }}
+            >
               {dogs.map((dog) => (
                 <DogCard
                   key={dog.id}
