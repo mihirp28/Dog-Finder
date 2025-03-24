@@ -1,3 +1,5 @@
+// src/pages/SearchPage.tsx
+
 import React, { useState, useEffect } from 'react';
 import { Container, Box, Toolbar } from '@mui/material';
 // import { SelectChangeEvent } from '@mui/material/Select';
@@ -11,22 +13,24 @@ import { getAllBreeds, searchDogs, getDogsByIds, Dog } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
 
 const SearchPage: React.FC = () => {
-  const { addFavorite } = useFavorites();
-  const { removeFavorite } = useFavorites();
+  const { addFavorite, removeFavorite } = useFavorites();
 
-  // Filters, sorting, and pagination states
+  // Breed & sorting
   const [breeds, setBreeds] = useState<string[]>([]);
   const [selectedBreed, setSelectedBreed] = useState<string>('');
-  
-  // New sort state: sortField and sortDirection
-  const [sortField, setSortField] = useState<string>('breed'); // default sort field
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc'); // default direction
-  
+  const [sortField, setSortField] = useState<string>('breed');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Age range slider: default 0 - 20
+  const [ageRange, setAgeRange] = useState<number[]>([0, 20]);
+
+  // Dogs, pagination
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [currentFrom, setCurrentFrom] = useState(0);
   const pageSize = 28;
 
+  // Fetch breed list
   useEffect(() => {
     (async () => {
       try {
@@ -38,17 +42,23 @@ const SearchPage: React.FC = () => {
     })();
   }, []);
 
+  // Whenever filters or pagination changes => fetch dogs
   useEffect(() => {
     (async () => {
       try {
-        // Combine sortField and sortDirection (e.g., "name:asc")
+        // e.g. "age:desc", "name:asc", "breed:asc", etc.
         const sortParam = `${sortField}:${sortDirection}`;
+
+        // pass ageMin, ageMax from slider
         const queryParams = {
           breeds: selectedBreed ? [selectedBreed] : undefined,
           sort: sortParam,
+          ageMin: ageRange[0],
+          ageMax: ageRange[1],
           size: pageSize,
           from: currentFrom,
         };
+
         const searchRes = await searchDogs(queryParams);
         setTotalResults(searchRes.total);
 
@@ -58,31 +68,34 @@ const SearchPage: React.FC = () => {
         console.error('Error fetching dogs:', err);
       }
     })();
-  }, [selectedBreed, sortField, sortDirection, currentFrom, pageSize]);
+  }, [selectedBreed, sortField, sortDirection, ageRange, currentFrom, pageSize]);
 
-  // Updated: handleBreedChange now receives (event, value)
+  // Breed filter
   const handleBreedChange = (event: React.SyntheticEvent, value: string | null) => {
     setSelectedBreed(value || '');
     setCurrentFrom(0);
   };
 
-  // Handler for sort field change
+  // Sort field & direction
   const handleSortFieldChange = (newField: string) => {
     setSortField(newField);
     setCurrentFrom(0);
   };
-
-  // Toggle sort direction
   const toggleSortDirection = () => {
-    setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     setCurrentFrom(0);
   };
 
-  // Pagination next/prev
-  const handleNextPage = () => setCurrentFrom(prev => prev + pageSize);
-  const handlePrevPage = () => setCurrentFrom(prev => Math.max(0, prev - pageSize));
+  // Age filter "Go" button (optional)
+  const handleAgeFilterApply = () => {
+    // If you only want to apply changes on "Go," you can do so here
+    // For instance, reset pagination:
+    setCurrentFrom(0);
+  };
 
-  // NEW: Jump to a specific page
+  // Pagination
+  const handleNextPage = () => setCurrentFrom((prev) => prev + pageSize);
+  const handlePrevPage = () => setCurrentFrom((prev) => Math.max(0, prev - pageSize));
   const handlePageJump = (pageNumber: number) => {
     const newFrom = (pageNumber - 1) * pageSize;
     setCurrentFrom(newFrom);
@@ -101,6 +114,9 @@ const SearchPage: React.FC = () => {
           sortDirection={sortDirection}
           handleSortFieldChange={handleSortFieldChange}
           toggleSortDirection={toggleSortDirection}
+          ageRange={ageRange}
+          setAgeRange={setAgeRange}
+          onAgeFilterApply={handleAgeFilterApply}
         />
 
         {/* Top pagination controls */}
