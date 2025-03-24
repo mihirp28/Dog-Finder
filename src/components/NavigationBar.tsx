@@ -114,7 +114,7 @@ const NavigationBar: React.FC = () => {
             <SearchIcon sx={{ color: '#666', mr: 1 }} />
             <InputBase
               sx={{ flex: 1 }}
-              placeholder="Search"
+              placeholder="Search using name"
               inputProps={{ 'aria-label': 'search' }}
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}

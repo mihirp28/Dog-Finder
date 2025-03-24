@@ -1,8 +1,6 @@
-// src/pages/SearchPage.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Container, Box, Toolbar } from '@mui/material';
-import { useLocation } from 'react-router-dom';
+// import { SelectChangeEvent } from '@mui/material/Select';
 
 import NavigationBar from '../components/NavigationBar';
 import FilterBar from '../components/FilterBar';
@@ -12,27 +10,23 @@ import DogCard from '../components/DogCard';
 import { getAllBreeds, searchDogs, getDogsByIds, Dog } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
 
-function useQuery() {
-  return new URLSearchParams(useLocation().search);
-}
-
 const SearchPage: React.FC = () => {
-  const query = useQuery();
-  const nameFilter = query.get('name') || ''; // The dog name typed in NavBar
+  const { addFavorite } = useFavorites();
+  const { removeFavorite } = useFavorites();
 
-  const { addFavorite, removeFavorite } = useFavorites();
-
-  // Breed filter, sorting, pagination
+  // Filters, sorting, and pagination states
   const [breeds, setBreeds] = useState<string[]>([]);
   const [selectedBreed, setSelectedBreed] = useState<string>('');
-  const [sortParam, setSortParam] = useState('breed:asc');
+  
+  // New sort state: sortField and sortDirection
+  const [sortField, setSortField] = useState<string>('breed'); // default sort field
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc'); // default direction
+  
   const [dogs, setDogs] = useState<Dog[]>([]);
-  const [filteredDogs, setFilteredDogs] = useState<Dog[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [currentFrom, setCurrentFrom] = useState(0);
   const pageSize = 28;
 
-  // Load all breeds
   useEffect(() => {
     (async () => {
       try {
@@ -44,10 +38,11 @@ const SearchPage: React.FC = () => {
     })();
   }, []);
 
-  // Fetch dogs by breed/pagination
   useEffect(() => {
     (async () => {
       try {
+        // Combine sortField and sortDirection (e.g., "name:asc")
+        const sortParam = `${sortField}:${sortDirection}`;
         const queryParams = {
           breeds: selectedBreed ? [selectedBreed] : undefined,
           sort: sortParam,
@@ -63,42 +58,31 @@ const SearchPage: React.FC = () => {
         console.error('Error fetching dogs:', err);
       }
     })();
-  }, [selectedBreed, sortParam, currentFrom, pageSize]);
+  }, [selectedBreed, sortField, sortDirection, currentFrom, pageSize]);
 
-  // Client-side filter by name
-  useEffect(() => {
-    if (!nameFilter.trim()) {
-      // No name param => show all dogs
-      setFilteredDogs(dogs);
-    } else {
-      // Filter ignoring case, partial match
-      const lowerName = nameFilter.toLowerCase();
-      const filtered = dogs.filter((d) =>
-        d.name.toLowerCase().includes(lowerName)
-      );
-      setFilteredDogs(filtered);
-    }
-  }, [nameFilter, dogs]);
-
-  // Breed filter changes
-  const handleBreedChange = (
-    event: React.SyntheticEvent,
-    value: string | null
-  ) => {
+  // Updated: handleBreedChange now receives (event, value)
+  const handleBreedChange = (event: React.SyntheticEvent, value: string | null) => {
     setSelectedBreed(value || '');
     setCurrentFrom(0);
   };
 
-  // Toggle sorting
-  const handleSortChange = () => {
-    const newSort = sortParam === 'breed:asc' ? 'breed:desc' : 'breed:asc';
-    setSortParam(newSort);
+  // Handler for sort field change
+  const handleSortFieldChange = (newField: string) => {
+    setSortField(newField);
     setCurrentFrom(0);
   };
 
-  // Pagination
-  const handleNextPage = () => setCurrentFrom((prev) => prev + pageSize);
-  const handlePrevPage = () => setCurrentFrom((prev) => Math.max(0, prev - pageSize));
+  // Toggle sort direction
+  const toggleSortDirection = () => {
+    setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    setCurrentFrom(0);
+  };
+
+  // Pagination next/prev
+  const handleNextPage = () => setCurrentFrom(prev => prev + pageSize);
+  const handlePrevPage = () => setCurrentFrom(prev => Math.max(0, prev - pageSize));
+
+  // NEW: Jump to a specific page
   const handlePageJump = (pageNumber: number) => {
     const newFrom = (pageNumber - 1) * pageSize;
     setCurrentFrom(newFrom);
@@ -113,12 +97,25 @@ const SearchPage: React.FC = () => {
           selectedBreed={selectedBreed}
           handleBreedChange={handleBreedChange}
           breeds={breeds}
-          sortParam={sortParam}
-          handleSortChange={handleSortChange}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          handleSortFieldChange={handleSortFieldChange}
+          toggleSortDirection={toggleSortDirection}
         />
 
+        {/* Top pagination controls */}
+        {/* <PaginationControls
+          currentFrom={currentFrom}
+          pageSize={pageSize}
+          totalResults={totalResults}
+          handleNextPage={handleNextPage}
+          handlePrevPage={handlePrevPage}
+          handlePageJump={handlePageJump} // pass the new callback
+        /> */}
+
+        {/* Results */}
         <Box display="flex" flexWrap="wrap" gap={6}>
-          {filteredDogs.map((dog) => (
+          {dogs.map((dog) => (
             <DogCard
               key={dog.id}
               dog={dog}
@@ -128,6 +125,7 @@ const SearchPage: React.FC = () => {
           ))}
         </Box>
 
+        {/* Bottom pagination controls */}
         <PaginationControls
           currentFrom={currentFrom}
           pageSize={pageSize}
