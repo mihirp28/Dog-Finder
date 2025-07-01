@@ -1,4 +1,3 @@
-// src/pages/LoginPage.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../api';
@@ -7,9 +6,9 @@ import { Container, TextField, Button, Typography, Paper, Box } from '@mui/mater
 import { useAuth } from '../context/AuthContext';
 
 
-// Simple email validation function
+//email validation function
 const isValidEmail = (email: string) => {
-  // Basic regex for email validation
+  //regex for email validation
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(email);
 };

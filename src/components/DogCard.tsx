@@ -1,4 +1,3 @@
-// src/components/DogCard.tsx
 import React, { useState, useEffect } from 'react';
 import { Typography, IconButton, Box } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';

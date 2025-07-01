@@ -1,4 +1,3 @@
-// src/context/FavoritesContext.tsx
 import React, { createContext, useState, useContext } from 'react';
 
 interface FavoritesContextProps {

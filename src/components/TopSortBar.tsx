@@ -1,5 +1,3 @@
-// src/components/TopSortBar.tsx
-
 import React from 'react';
 import { Box, FormControl, InputLabel, Select, MenuItem, IconButton } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';

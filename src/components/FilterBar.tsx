@@ -1,5 +1,3 @@
-// src/components/FilterBar.tsx
-
 import React from 'react';
 import { Box, FormControl, InputLabel, Select, MenuItem, IconButton, TextField, Slider, Button } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';

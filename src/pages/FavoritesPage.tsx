@@ -1,4 +1,3 @@
-// src/pages/FavoritesPage.tsx
 import React, { useEffect, useState } from 'react';
 import { useFavorites } from '../context/FavoritesContext';
 import { getDogsByIds, Dog, matchDogs } from '../api';

@@ -1,5 +1,3 @@
-// src/components/PaginationControls.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, TextField } from '@mui/material';
 
@@ -29,10 +27,8 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
   // local state for the user's inline page input
   const [inputPage, setInputPage] = useState<number>(currentPage);
 
-  // ───────────────────────────────────────────────────────────────────────────────
   // Sync inputPage with currentPage whenever currentPage changes (e.g., after
   // clicking "Prev Page" or "Next Page").
-  // ───────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     setInputPage(currentPage);
   }, [currentPage]);
@@ -47,7 +43,6 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
     if (inputPage >= 1 && inputPage <= totalPages) {
       handlePageJump(inputPage);
     } else {
-      // clamp or show an error
       if (inputPage < 1) setInputPage(1);
       else if (inputPage > totalPages) setInputPage(totalPages);
     }
@@ -67,7 +62,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
         &lt;&lt; Prev Page
       </Button>
 
-      {/* Inline editable "Page X of Y" */}
+      {/* Inline editable Page X of Y */}
       <Typography variant="body1" component="span">
         Page
       </Typography>

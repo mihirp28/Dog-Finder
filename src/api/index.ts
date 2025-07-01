@@ -1,12 +1,10 @@
-// src/api/index.ts
-
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://frontend-take-home-service.fetch.com';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // important to include cookies
+  withCredentials: true, // to include cookies
 });
 
 // Auth APIs

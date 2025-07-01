@@ -1,4 +1,3 @@
-// src/components/NavigationBar.tsx
 import React, { useState } from 'react';
 import {
   AppBar,
@@ -14,8 +13,6 @@ import { useNavigate, createSearchParams } from 'react-router-dom';
 import { logout } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAuth } from '../context/AuthContext';
-
-// MUI Icons
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SearchIcon from '@mui/icons-material/Search';
