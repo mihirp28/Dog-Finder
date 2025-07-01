@@ -50,7 +50,7 @@ const MatchResultPage: React.FC<MatchResultPageProps> = ({
             No matched dog found. Go back and select favorites!
           </Typography>
           <Button variant="outlined" onClick={() => navigate('/search')}>
-            Return to Search
+            Return to favorites
           </Button>
         </Container>
       </>
@@ -85,7 +85,7 @@ const MatchResultPage: React.FC<MatchResultPageProps> = ({
         )}
         <Button
           variant="contained"
-          onClick={() => navigate('/search')}
+          onClick={() => navigate('/favorites')}
           style={{ marginTop: '1rem' }}
         >
           Back to Search
