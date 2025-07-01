@@ -7,12 +7,10 @@ import {
   Typography,
   Button,
   Box,
-  Card,
-  CardContent,
-  CardMedia,
   Toolbar,
 } from '@mui/material';
 import NavigationBar from '../components/NavigationBar';
+import DogCard from '../components/DogCard';
 
 interface FavoritesPageProps {
   mode: 'light' | 'dark';
@@ -37,33 +35,28 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
         } else {
           setFavoriteDogs([]);
         }
-      } catch (err) {
-        console.error(err);
+      } catch {
         setError('Failed to load favorite dogs');
       }
     })();
   }, [favoriteIds]);
 
   const handleMatch = async () => {
+    if (favoriteIds.length === 0) {
+      setError('No favorites selected to match.');
+      return;
+    }
     try {
-      if (favoriteIds.length === 0) {
-        setError('No favorites selected to match.');
-        return;
-      }
       const matchedId = await matchDogs(favoriteIds);
       navigate('/match', { state: { matchedId } });
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError('Failed to generate match.');
     }
   };
 
   return (
     <>
-      <NavigationBar
-        mode={mode}
-        onToggleDarkMode={onToggleDarkMode}
-      />
+      <NavigationBar mode={mode} onToggleDarkMode={onToggleDarkMode} />
       <Toolbar />
 
       <Container>
@@ -78,28 +71,19 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
         >
           Generate a Match
         </Button>
-        <Box display="flex" flexWrap="wrap" gap={2} marginTop={2}>
+        <Box
+          mt={2}
+          display="grid"
+          gridTemplateColumns="repeat(auto-fill,minmax(250px,1fr))"
+          gap={2}
+        >
           {favoriteDogs.map(dog => (
-            <Card key={dog.id} style={{ width: 250 }}>
-              <CardMedia
-                component="img"
-                image={dog.img}
-                alt={dog.name}
-                height="200"
-              />
-              <CardContent>
-                <Typography variant="h6">{dog.name}</Typography>
-                <Typography>Breed: {dog.breed}</Typography>
-                <Typography>Age: {dog.age}</Typography>
-                <Typography>ZIP: {dog.zip_code}</Typography>
-                <Button
-                  variant="outlined"
-                  onClick={() => removeFavorite(dog.id)}
-                >
-                  Remove
-                </Button>
-              </CardContent>
-            </Card>
+            <DogCard
+              key={dog.id}
+              dog={dog}
+              onFavorite={() => removeFavorite(dog.id)}
+              onUnfavorite={() => removeFavorite(dog.id)}
+            />
           ))}
         </Box>
       </Container>
