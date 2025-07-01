@@ -1,33 +1,37 @@
 import React from 'react';
 import { Box, Slider, Typography, TextField, Button } from '@mui/material';
 import Autocomplete from '@mui/material/Autocomplete';
+import { US_STATES } from '../api/locationApi';
 
 interface LeftFilterPanelProps {
-  // Multiple breed filter
+  // Breed
   allBreeds: string[];
   selectedBreeds: string[];
   onBreedChange: (newBreeds: string[]) => void;
-  
-  // Age filter
+
+  // Age
   ageRange: number[];
   setAgeRange: (newRange: number[]) => void;
 
-  // Location filters
+  // Multi-location filters
+  selectedStates: string[];
+  onStateChange: (vals: string[]) => void;
+
+  selectedCities: string[];
+  onCityChange: (vals: string[]) => void;
+
+  selectedCounties: string[];
+  onCountyChange: (vals: string[]) => void;
+
+  selectedZips: string[];
+  onZipChange: (vals: string[]) => void;
+
+  // Options for dropdowns (seeded once on mount)
   availableCities: string[];
-  availableStates: string[];
   availableCounties: string[];
   availableZips: string[];
 
-  city: string;
-  stateVal: string;
-  county: string;
-  zipCode: string;
-  onCityChange: (val: string) => void;
-  onStateChange: (val: string) => void;
-  onCountyChange: (val: string) => void;
-  onZipChange: (val: string) => void;
-
-  // Callback for applying location filters
+  // Final “Apply” callback
   onApplyLocationFilter: () => void;
 }
 
@@ -37,29 +41,26 @@ const LeftFilterPanel: React.FC<LeftFilterPanelProps> = ({
   onBreedChange,
   ageRange,
   setAgeRange,
+  selectedStates,
+  onStateChange,
+  selectedCities,
+  onCityChange,
+  selectedCounties,
+  onCountyChange,
+  selectedZips,
+  onZipChange,
   availableCities,
-  availableStates,
   availableCounties,
   availableZips,
-  city,
-  stateVal,
-  county,
-  zipCode,
-  onCityChange,
-  onStateChange,
-  onCountyChange,
-  onZipChange,
   onApplyLocationFilter,
 }) => {
-  const handleSliderChange = (event: Event, newValue: number | number[]) => {
-    if (Array.isArray(newValue)) {
-      setAgeRange(newValue);
-    }
+  const handleSliderChange = (_: Event, newValue: number | number[]) => {
+    if (Array.isArray(newValue)) setAgeRange(newValue);
   };
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>
-      {/* Multiple Breed Filter */}
+      {/* Breed Filter */}
       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
         Breed Filter
       </Typography>
@@ -67,8 +68,10 @@ const LeftFilterPanel: React.FC<LeftFilterPanelProps> = ({
         multiple
         options={allBreeds}
         value={selectedBreeds}
-        onChange={(event, newValue) => onBreedChange(newValue)}
-        renderInput={(params) => <TextField {...params} label="Breeds" variant="outlined" />}
+        onChange={(_, v) => onBreedChange(v as string[])}
+        renderInput={(params) => (
+          <TextField {...params} label="Breeds" variant="outlined" />
+        )}
         sx={{ minWidth: 200 }}
       />
 
@@ -88,23 +91,23 @@ const LeftFilterPanel: React.FC<LeftFilterPanelProps> = ({
         <Typography variant="body2">Max: {ageRange[1]}+</Typography>
       </Box>
 
-      {/* Location Filters */}
+      {/* Location Filter */}
       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
         Location Filter
       </Typography>
 
-      {/* State typeahead (2-letter) */}
+      {/* States */}
       <Autocomplete
+        multiple
         size="small"
-        freeSolo={false}
-        options={availableStates}
-        inputValue={stateVal}
-        onInputChange={(e, val) => onStateChange(val.toUpperCase())}
+        options={US_STATES}
+        value={selectedStates}
+        onChange={(_, v) => onStateChange(v as string[])}
         renderInput={(params) => (
           <TextField
             {...params}
-            label="State"
-            placeholder="Type 2 letters"
+            label="States"
+            placeholder="Select states"
             variant="outlined"
             fullWidth
           />
@@ -112,29 +115,43 @@ const LeftFilterPanel: React.FC<LeftFilterPanelProps> = ({
         sx={{ mb: 2 }}
       />
 
-      {/* City filter as an Autocomplete */}
+      {/* Cities */}
       <Autocomplete
+        multiple
+        freeSolo
+        size="small"
         options={availableCities}
-        value={city}
-        onChange={(event, newValue) => onCityChange(newValue || '')}
-        renderInput={(params) => <TextField {...params} label="City" variant="outlined" fullWidth />}
+        value={selectedCities}
+        onChange={(_, v) => onCityChange(v as string[])}
+        renderInput={(params) => (
+          <TextField {...params} label="Cities" variant="outlined" fullWidth />
+        )}
       />
 
-      {/* County dropdown */}
+      {/* Counties */}
       <Autocomplete
+        multiple
+        size="small"
         options={availableCounties}
-        value={county}
-        onChange={(event, newValue) => onCountyChange(newValue || '')}
-        renderInput={(params) => <TextField {...params} label="County" variant="outlined" fullWidth />}
+        value={selectedCounties}
+        onChange={(_, v) => onCountyChange(v as string[])}
+        renderInput={(params) => (
+          <TextField {...params} label="Counties" variant="outlined" fullWidth />
+        )}
       />
 
-      {/* ZIP Code dropdown */}
+      {/* ZIP Codes */}
       <Autocomplete
+        multiple
+        size="small"
         options={availableZips}
-        value={zipCode}
-        onChange={(event, newValue) => onZipChange(newValue || '')}
-        renderInput={(params) => <TextField {...params} label="ZIP Code" variant="outlined" fullWidth />}
+        value={selectedZips}
+        onChange={(_, v) => onZipChange(v as string[])}
+        renderInput={(params) => (
+          <TextField {...params} label="ZIP Codes" variant="outlined" fullWidth />
+        )}
       />
+
       <Button variant="contained" onClick={onApplyLocationFilter}>
         Apply Location Filter
       </Button>

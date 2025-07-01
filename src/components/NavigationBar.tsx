@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -7,23 +7,39 @@ import {
   Badge,
   IconButton,
   Paper,
-  InputBase
+  InputBase,
+  Tooltip
 } from '@mui/material';
-import { useNavigate, createSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { logout } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAuth } from '../context/AuthContext';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SearchIcon from '@mui/icons-material/Search';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
 
-const NavigationBar: React.FC = () => {
+interface NavigationBarProps {
+  mode: 'light' | 'dark';
+  onToggleDarkMode: () => void;
+}
+
+const NavigationBar: React.FC<NavigationBarProps> = ({
+  mode,
+  onToggleDarkMode
+}) => {
   const navigate = useNavigate();
   const { favoriteIds, clearFavorites } = useFavorites();
   const { logoutUser } = useAuth();
 
-  // Local state for the user’s typed dog name
-  const [searchName, setSearchName] = useState('');
+  // Sync with ?name=…
+  const [searchParams] = useSearchParams();
+  const [searchName, setSearchName] = useState(searchParams.get('name') || '');
+
+  useEffect(() => {
+    setSearchName(searchParams.get('name') || '');
+  }, [searchParams]);
 
   const handleLogout = async () => {
     try {
@@ -31,111 +47,90 @@ const NavigationBar: React.FC = () => {
       clearFavorites();
       logoutUser();
       navigate('/');
-    } catch (error) {
-      console.error('Logout failed', error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  // Called when user presses Enter or clicks the search icon
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchName.trim()) {
-      navigate({
-        pathname: '/search',
-        search: `?${createSearchParams({ name: searchName })}`,
-      });
-    } else {
-      navigate('/search');
-    }
+    const name = searchName.trim();
+    navigate(name ? `/search?name=${encodeURIComponent(name)}` : '/search');
   };
 
   return (
     <AppBar
       position="fixed"
       sx={{
-        margin: 0,
-        borderRadius: 0,
         top: 0,
-        left: 0,
-        right: 0,
-        zIndex: (theme) => theme.zIndex.drawer + 1,
-        backgroundColor: '#fff',
-        color: 'black',
+        zIndex: theme => theme.zIndex.drawer + 1,
+        backgroundColor: 'background.paper',
+        color: 'text.primary',
       }}
     >
-      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        {/* Left: Brand Logo + Title */}
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <Toolbar sx={{ justifyContent: 'space-between' }}>
+        {/* Logo & Title */}
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+          onClick={() => navigate('/search')}
+        >
           <Box
-            sx={{
-              width: 50,
-              height: 50,
-              borderRadius: '50%',
-              overflow: 'hidden',
-              marginRight: 2,
-              cursor: 'pointer',
-            }}
-            onClick={() => navigate('/search')}
-          >
-            <Box
-              component="img"
-              src={`${process.env.PUBLIC_URL}/assets/brand-logo.png`}
-              alt="Brand Logo"
-              sx={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-          </Box>
-          <Typography variant="h6" sx={{ display: { xs: 'none', sm: 'block' } }}>
+            component="img"
+            src={`${process.env.PUBLIC_URL}/assets/brand-logo.png`}
+            alt="Logo"
+            sx={{ width: 40, height: 40, borderRadius: '50%', mr: 1 }}
+          />
+          <Typography variant="h6" noWrap>
             My Dog Finder
           </Typography>
         </Box>
 
-        {/* Center: "Paper" search bar */}
+        {/* Search */}
         <Box
           component="form"
           onSubmit={handleSearchSubmit}
-          sx={{ flexGrow: 1, maxWidth: 400, mx: 4 }}
+          sx={{ flexGrow: 1, mx: 4, maxWidth: 400 }}
         >
           <Paper
             sx={{
               p: '4px 8px',
               display: 'flex',
               alignItems: 'center',
-              backgroundColor: '#f4f4f4', // Gray background
-              borderRadius: '8px',
+              backgroundColor: 'action.hover',
+              borderRadius: 1,
             }}
           >
-            <SearchIcon sx={{ color: '#666', mr: 1 }} />
+            <SearchIcon color="action" sx={{ mr: 1 }} />
             <InputBase
               sx={{ flex: 1 }}
               placeholder="Search using name"
-              inputProps={{ 'aria-label': 'search' }}
               value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
+              onChange={e => setSearchName(e.target.value)}
             />
           </Paper>
         </Box>
 
-        {/* Right: Favorites + Logout */}
-        <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+        {/* Right‐hand controls: Dark Mode, Favorites, Logout */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Moved Dark Mode toggle here */}
+          <Tooltip
+            title={
+              mode === 'light'
+                ? 'Switch to dark mode'
+                : 'Switch to light mode'
+            }
+          >
+            <IconButton onClick={onToggleDarkMode} color="inherit">
+              {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
+            </IconButton>
+          </Tooltip>
+
           <IconButton
             onClick={() => navigate('/favorites')}
-            sx={{ color: 'inherit', flexDirection: 'column' }}
+            color="inherit"
+            sx={{ flexDirection: 'column' }}
           >
-            <Badge
-              badgeContent={favoriteIds.length}
-              color="error"
-              overlap="rectangular"
-              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-              sx={{
-                '& .MuiBadge-badge': {
-                  transform: 'scale(1) translate(30%, -30%)',
-                },
-              }}
-            >
+            <Badge badgeContent={favoriteIds.length} color="error">
               <FavoriteIcon />
             </Badge>
             <Typography variant="caption">Favorites</Typography>
@@ -143,7 +138,8 @@ const NavigationBar: React.FC = () => {
 
           <IconButton
             onClick={handleLogout}
-            sx={{ color: 'inherit', flexDirection: 'column' }}
+            color="inherit"
+            sx={{ flexDirection: 'column' }}
           >
             <LogoutIcon />
             <Typography variant="caption">Logout</Typography>

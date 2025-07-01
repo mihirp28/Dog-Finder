@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Toolbar } from '@mui/material';
+import { useSearchParams } from 'react-router-dom';
 import NavigationBar from '../components/NavigationBar';
 import Footer from '../components/Footer';
 import DogCard from '../components/DogCard';
@@ -8,58 +9,78 @@ import LeftFilterPanel from '../components/LeftFilterPanel';
 import TopSortBar from '../components/TopSortBar';
 import { getAllBreeds, searchDogs, getDogsByIds, Dog } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
-import { getAllCities, getAllCounties, getAllZips, searchLocations, searchStates } from '../api/locationApi';
+import {
+  getAllCities,
+  getAllCounties,
+  getAllZips,
+  searchLocations,
+} from '../api/locationApi';
 
-const SearchPage: React.FC = () => {
+interface SearchPageProps {
+  mode: 'light' | 'dark';
+  onToggleDarkMode: () => void;
+}
+
+const SearchPage: React.FC<SearchPageProps> = ({
+  mode,
+  onToggleDarkMode,
+}) => {
   const { addFavorite, removeFavorite } = useFavorites();
 
-  // Multiple Breed Filter
+  // Breed, sort & age
   const [allBreeds, setAllBreeds] = useState<string[]>([]);
   const [selectedBreeds, setSelectedBreeds] = useState<string[]>([]);
-
-  // Sorting
   const [sortField, setSortField] = useState<string>('breed');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-
-  // Age range
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
+    'asc'
+  );
   const [ageRange, setAgeRange] = useState<number[]>([0, 20]);
 
-  // Location Filters
-  const [city, setCity] = useState<string>('');
-  const [stateVal, setStateVal] = useState<string>('');
-  const [county, setCounty] = useState<string>('');
-  const [zipCode, setZipCode] = useState<string>('');
+  // Multi‐select location filters
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [selectedCounties, setSelectedCounties] = useState<string[]>([]);
+  const [selectedZips, setSelectedZips] = useState<string[]>([]);
   const [locationZips, setLocationZips] = useState<string[]>([]);
-  
+
+  // Dropdown options (loaded once)
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [availableCounties, setAvailableCounties] = useState<string[]>([]);
   const [availableZips, setAvailableZips] = useState<string[]>([]);
 
-  // Dogs & pagination
+  // Dog results + pagination
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [currentFrom, setCurrentFrom] = useState(0);
   const pageSize = 28;
 
-  // Fetch breed list on mount
+  // URL‐driven name filter
+  const [searchParams, setSearchParams] = useSearchParams();
+  const nameFilter = searchParams
+    .get('name')
+    ?.trim()
+    .toLowerCase() || '';
+
+  // 1️⃣ Load all breeds
   useEffect(() => {
     (async () => {
       try {
-        const fetchedBreeds = await getAllBreeds();
-        setAllBreeds(fetchedBreeds);
+        setAllBreeds(await getAllBreeds());
       } catch (err) {
         console.error('Error fetching breeds:', err);
       }
     })();
   }, []);
 
-  // Fetch available city, county, and ZIP options on mount
+  // 2️⃣ Seed location dropdowns once
   useEffect(() => {
     (async () => {
       try {
-        const cities = await getAllCities();
-        const counties = await getAllCounties();
-        const zips = await getAllZips();
+        const [cities, counties, zips] = await Promise.all([
+          getAllCities(),
+          getAllCounties(),
+          getAllZips(),
+        ]);
         setAvailableCities(cities);
         setAvailableCounties(counties);
         setAvailableZips(zips);
@@ -69,17 +90,14 @@ const SearchPage: React.FC = () => {
     })();
   }, []);
 
-  // Fetch dogs whenever filters/pagination changes
+  // 3️⃣ Fetch dogs when filters or page change
   useEffect(() => {
     (async () => {
       try {
         const sortParam = `${sortField}:${sortDirection}`;
-        const combinedZips: string[] = [...locationZips];
-        if (zipCode.trim()) combinedZips.push(zipCode.trim());
-
-        const queryParams = {
+        const params = {
           breeds: selectedBreeds.length ? selectedBreeds : undefined,
-          zipCodes: combinedZips.length ? combinedZips : undefined,
+          zipCodes: locationZips.length ? locationZips : undefined,
           sort: sortParam,
           ageMin: ageRange[0],
           ageMax: ageRange[1],
@@ -87,82 +105,130 @@ const SearchPage: React.FC = () => {
           from: currentFrom,
         };
 
-        const searchRes = await searchDogs(queryParams);
-        setTotalResults(searchRes.total);
-
-        const dogData = await getDogsByIds(searchRes.resultIds);
-        setDogs(dogData);
+        const { total, resultIds } = await searchDogs(params);
+        setTotalResults(total);
+        setDogs(await getDogsByIds(resultIds));
       } catch (err) {
         console.error('Error fetching dogs:', err);
       }
     })();
-  }, [selectedBreeds, locationZips, zipCode, sortField, sortDirection, ageRange, currentFrom]);
+  }, [
+    selectedBreeds,
+    locationZips,
+    sortField,
+    sortDirection,
+    ageRange,
+    currentFrom,
+  ]);
 
-  // Handlers for multiple breed selection
-  const handleBreedChange = (newBreeds: string[]) => {
-    setSelectedBreeds(newBreeds);
-    setCurrentFrom(0);
-  };
-
-  // Handlers for location filters
-  const handleCityChange = (val: string) => setCity(val);
-  const handleStateChange = (val: string) => setStateVal(val);
-  const handleCountyChange = (val: string) => setCounty(val);
-  const handleZipChange = (val: string) => setZipCode(val);
-
-  // When user clicks "Apply Location Filter"
+  // Apply location filters → union of matching ZIPs; clear name query
   const handleApplyLocationFilter = async () => {
     try {
-      const locBody: any = {};
-      if (city.trim()) locBody.city = city.trim();
-      if (stateVal.trim()) locBody.states = [stateVal.trim()];
-      if (county.trim()) locBody.county = county.trim();
+      const stateZips =
+        selectedStates.length > 0
+          ? (
+              await searchLocations({
+                states: selectedStates,
+                size: 10000,
+              })
+            ).zipCodes
+          : [];
 
-      if (Object.keys(locBody).length > 0) {
-        const { zipCodes } = await searchLocations(locBody);
-        setLocationZips(zipCodes);
-      } else {
-        setLocationZips([]);
-      }
+      const cityZips = (
+        await Promise.all(
+          selectedCities.map(city =>
+            searchLocations({ city, size: 10000 }).then(
+              r => r.zipCodes
+            )
+          )
+        )
+      ).flat();
+
+      const countyZips = (
+        await Promise.all(
+          selectedCounties.map(county =>
+            searchLocations({ county, size: 10000 }).then(
+              r => r.zipCodes
+            )
+          )
+        )
+      ).flat();
+
+      const allZ = Array.from(
+        new Set([
+          ...stateZips,
+          ...cityZips,
+          ...countyZips,
+          ...selectedZips,
+        ])
+      );
+
+      setLocationZips(allZ);
       setCurrentFrom(0);
+
+      // remove any ?name= so filters show results again
+      setSearchParams({});
     } catch (err) {
       console.error('Error applying location filter:', err);
     }
   };
 
-  // Sorting Handlers
-  const handleSortFieldChange = (field: string) => {
-    setSortField(field);
+  // Handlers for breed, sort, pagination
+  const handleBreedChange = (vals: string[]) => {
+    setSelectedBreeds(vals);
+    setCurrentFrom(0);
+  };
+  const handleSortFieldChange = (f: string) => {
+    setSortField(f);
     setCurrentFrom(0);
   };
   const toggleSortDirection = () => {
-    setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    setSortDirection(d => (d === 'asc' ? 'desc' : 'asc'));
     setCurrentFrom(0);
   };
+  const handleNextPage = () => setCurrentFrom(p => p + pageSize);
+  const handlePrevPage = () =>
+    setCurrentFrom(p => Math.max(0, p - pageSize));
+  const handlePageJump = (page: number) =>
+    setCurrentFrom((page - 1) * pageSize);
 
-  // Pagination Handlers
-  const handleNextPage = () => setCurrentFrom(prev => prev + pageSize);
-  const handlePrevPage = () => setCurrentFrom(prev => Math.max(0, prev - pageSize));
-  const handlePageJump = (pageNumber: number) => {
-    setCurrentFrom((pageNumber - 1) * pageSize);
-  };
+  // Client‐side name filter
+  const filteredDogs = nameFilter
+    ? dogs.filter(d =>
+        d.name.toLowerCase().includes(nameFilter)
+      )
+    : dogs;
 
-  // Calculate displayed range
-  const startIndex = totalResults === 0 ? 0 : currentFrom + 1;
-  const endIndex = Math.min(currentFrom + pageSize, totalResults);
+  // Display range respects name-filter when present
+  const startIndex = nameFilter
+    ? filteredDogs.length > 0
+      ? 1
+      : 0
+    : totalResults
+    ? currentFrom + 1
+    : 0;
+  const endIndex = nameFilter
+    ? filteredDogs.length
+    : Math.min(currentFrom + pageSize, totalResults);
+  const displayTotal = nameFilter ? filteredDogs.length : totalResults;
 
   return (
     <>
-      <NavigationBar />
-      <Toolbar />
+      <NavigationBar
+        mode={mode}
+        onToggleDarkMode={onToggleDarkMode}
+      />
+      <Toolbar /> {/* spacer for fixed AppBar */}
+
       <Box sx={{ width: '100%', mt: 0 }}>
         <Box display="flex">
           {/* LEFT FILTER PANEL */}
           <Box
             sx={{
               width: 250,
-              backgroundColor: '#f8f8f8',
-              borderRight: '1px solid #ccc',
+              bgcolor: 'background.paper',
+              borderRight: 1,
+              borderColor: 'divider',
               p: 2,
               flexShrink: 0,
             }}
@@ -173,26 +239,33 @@ const SearchPage: React.FC = () => {
               onBreedChange={handleBreedChange}
               ageRange={ageRange}
               setAgeRange={setAgeRange}
-              city={city}
-              onCityChange={handleCityChange}
-              stateVal={stateVal}
-              onStateChange={handleStateChange}
-              county={county}
-              onCountyChange={handleCountyChange}
-              zipCode={zipCode}
-              onZipChange={handleZipChange}
-              onApplyLocationFilter={handleApplyLocationFilter}
+              selectedStates={selectedStates}
+              onStateChange={setSelectedStates}
+              selectedCities={selectedCities}
+              onCityChange={setSelectedCities}
+              selectedCounties={selectedCounties}
+              onCountyChange={setSelectedCounties}
+              selectedZips={selectedZips}
+              onZipChange={setSelectedZips}
               availableCities={availableCities}
-              availableStates={searchStates(stateVal)}
               availableCounties={availableCounties}
               availableZips={availableZips}
+              onApplyLocationFilter={handleApplyLocationFilter}
             />
           </Box>
 
-          {/* RIGHT MAIN CONTENT */}
+          {/* MAIN CONTENT */}
           <Box sx={{ flex: 1, p: 2 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Box>{startIndex}–{endIndex} of {totalResults} results</Box>
+            {/* Results & Sort */}
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              mb={2}
+            >
+              <Box>
+                {startIndex}–{endIndex} of {displayTotal} results
+              </Box>
               <TopSortBar
                 sortField={sortField}
                 sortDirection={sortDirection}
@@ -200,14 +273,17 @@ const SearchPage: React.FC = () => {
                 toggleSortDirection={toggleSortDirection}
               />
             </Box>
+
+            {/* Dog Cards */}
             <Box
               sx={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                gridTemplateColumns:
+                  'repeat(auto-fill,minmax(250px,1fr))',
                 gap: 4,
               }}
             >
-              {dogs.map(dog => (
+              {filteredDogs.map(dog => (
                 <DogCard
                   key={dog.id}
                   dog={dog}
@@ -216,11 +292,13 @@ const SearchPage: React.FC = () => {
                 />
               ))}
             </Box>
+
+            {/* Pagination */}
             <Box mt={2}>
               <PaginationControls
                 currentFrom={currentFrom}
                 pageSize={pageSize}
-                totalResults={totalResults}
+                totalResults={displayTotal}
                 handleNextPage={handleNextPage}
                 handlePrevPage={handlePrevPage}
                 handlePageJump={handlePageJump}
@@ -229,6 +307,7 @@ const SearchPage: React.FC = () => {
           </Box>
         </Box>
       </Box>
+
       <Footer />
     </>
   );

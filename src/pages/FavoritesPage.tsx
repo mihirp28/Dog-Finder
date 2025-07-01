@@ -14,7 +14,15 @@ import {
 } from '@mui/material';
 import NavigationBar from '../components/NavigationBar';
 
-const FavoritesPage: React.FC = () => {
+interface FavoritesPageProps {
+  mode: 'light' | 'dark';
+  onToggleDarkMode: () => void;
+}
+
+const FavoritesPage: React.FC<FavoritesPageProps> = ({
+  mode,
+  onToggleDarkMode,
+}) => {
   const navigate = useNavigate();
   const { favoriteIds, removeFavorite } = useFavorites();
   const [favoriteDogs, setFavoriteDogs] = useState<Dog[]>([]);
@@ -52,8 +60,10 @@ const FavoritesPage: React.FC = () => {
 
   return (
     <>
-      {/* Fixed Navigation Bar with spacer */}
-      <NavigationBar />
+      <NavigationBar
+        mode={mode}
+        onToggleDarkMode={onToggleDarkMode}
+      />
       <Toolbar />
 
       <Container>
@@ -61,11 +71,15 @@ const FavoritesPage: React.FC = () => {
           Your Favorites
         </Typography>
         {error && <Typography color="error">{error}</Typography>}
-        <Button variant="contained" onClick={handleMatch} disabled={favoriteIds.length === 0}>
+        <Button
+          variant="contained"
+          onClick={handleMatch}
+          disabled={favoriteIds.length === 0}
+        >
           Generate a Match
         </Button>
         <Box display="flex" flexWrap="wrap" gap={2} marginTop={2}>
-          {favoriteDogs.map((dog) => (
+          {favoriteDogs.map(dog => (
             <Card key={dog.id} style={{ width: 250 }}>
               <CardMedia
                 component="img"
@@ -78,7 +92,10 @@ const FavoritesPage: React.FC = () => {
                 <Typography>Breed: {dog.breed}</Typography>
                 <Typography>Age: {dog.age}</Typography>
                 <Typography>ZIP: {dog.zip_code}</Typography>
-                <Button variant="outlined" onClick={() => removeFavorite(dog.id)}>
+                <Button
+                  variant="outlined"
+                  onClick={() => removeFavorite(dog.id)}
+                >
                   Remove
                 </Button>
               </CardContent>

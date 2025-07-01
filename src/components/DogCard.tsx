@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, IconButton, Box } from '@mui/material';
+import {
+  Card,
+  CardMedia,
+  IconButton,
+  Typography,
+  Box,
+  useTheme,
+} from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-// Instead of ZoomInIcon, import ZoomOutMapIcon (diagonal arrows)
 import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
-
 import { Dog } from '../api';
 import { useFavorites } from '../context/FavoritesContext';
 import { getLocations } from '../api';
@@ -24,6 +29,7 @@ interface Props {
 }
 
 const DogCard: React.FC<Props> = ({ dog, onFavorite, onUnfavorite }) => {
+  const theme = useTheme();
   const { favoriteIds } = useFavorites();
   const isFavorited = favoriteIds.includes(dog.id);
 
@@ -31,169 +37,167 @@ const DogCard: React.FC<Props> = ({ dog, onFavorite, onUnfavorite }) => {
   const [location, setLocation] = useState<Location | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
+  // fetch zip → city/state/county
   useEffect(() => {
-    const fetchLocation = async () => {
+    (async () => {
       try {
-        const locations = await getLocations([dog.zip_code]);
-        if (locations && locations.length > 0) {
-          setLocation(locations[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching location for ZIP:', dog.zip_code, error);
+        const locs = await getLocations([dog.zip_code]);
+        if (locs.length) setLocation(locs[0]);
+      } catch (err) {
+        console.error('ZIP lookup failed', err);
       }
-    };
-    fetchLocation();
+    })();
   }, [dog.zip_code]);
 
   const toggleFavorite = () => {
-    if (isFavorited) {
-      onUnfavorite?.();
-    } else {
-      onFavorite?.();
-    }
-  };
-
-  // --- Styles ---
-  const cardContainerStyle: React.CSSProperties = {
-    width: '250px',
-    height: '350px',
-    backgroundColor: '#fff',
-    display: 'flex',
-    flexDirection: 'column',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    borderRadius: '6px',
-    overflow: 'hidden',
-  };
-
-  const topImageContainer: React.CSSProperties = {
-    position: 'relative',
-    height: '210px',
-    perspective: '1000px',
-  };
-
-  const flipper: React.CSSProperties = {
-    width: '100%',
-    height: '100%',
-    transition: 'transform 0.6s',
-    transformStyle: 'preserve-3d',
-    transform: hover ? 'rotateY(180deg)' : 'none',
-    position: 'relative',
-  };
-
-  const faceCommon: React.CSSProperties = {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    backfaceVisibility: 'hidden',
-    top: 0,
-    left: 0,
-  };
-
-  const frontFace: React.CSSProperties = {
-    ...faceCommon,
-    zIndex: 2,
-  };
-
-  const backFace: React.CSSProperties = {
-    ...faceCommon,
-    transform: 'rotateY(180deg)',
-    backgroundColor: '#f8f8f8',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: '0.5rem',
-    boxSizing: 'border-box',
-  };
-
-  const imageStyle: React.CSSProperties = {
-    width: '100%',
-    height: '100%',
-    objectFit: 'contain',
-    position: 'relative',
-    zIndex: 2,
-  };
-
-  const blurBackgroundStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    backgroundImage: `url(${dog.img})`,
-    backgroundSize: 'cover',
-    filter: 'blur(8px)',
-    transform: 'scale(1.1)',
-    zIndex: 1,
-  };
-
-  const bottomContent: React.CSSProperties = {
-    height: '140px',
-    padding: '0.5rem',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxSizing: 'border-box',
+    if (isFavorited) onUnfavorite?.();
+    else onFavorite?.();
   };
 
   return (
     <>
-      <div style={cardContainerStyle}>
-        {/* TOP: Flippable image area */}
-        <div
-          style={topImageContainer}
-          onMouseEnter={() => setHover(true)}
-          onMouseLeave={() => setHover(false)}
+      <Card
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        sx={{
+          width: 250,
+          height: 350,
+          bgcolor: 'background.paper',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: 2,
+          borderRadius: 1,
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        {/* Flippable image area */}
+        <Box
+          sx={{
+            position: 'relative',
+            height: 210,
+            perspective: 1000,
+          }}
         >
-          <div style={flipper}>
-            {/* FRONT IMAGE */}
-            <div style={frontFace}>
-              <div style={blurBackgroundStyle} />
-              <img src={dog.img} alt={dog.name} style={imageStyle} />
-            </div>
-            {/* BACK INFO */}
-            <div style={backFace}>
+          <Box
+            sx={{
+              width: '100%',
+              height: '100%',
+              transition: 'transform 0.6s',
+              transformStyle: 'preserve-3d',
+              transform: hover ? 'rotateY(180deg)' : 'none',
+              position: 'relative',
+            }}
+          >
+            {/* Front side */}
+            <Box
+              sx={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                backfaceVisibility: 'hidden',
+                top: 0,
+                left: 0,
+                zIndex: 2,
+              }}
+            >
+              {/* blurred background */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundImage: `url(${dog.img})`,
+                  backgroundSize: 'cover',
+                  filter: 'blur(8px)',
+                  transform: 'scale(1.1)',
+                  zIndex: 1,
+                }}
+              />
+              <CardMedia
+                component="img"
+                src={dog.img}
+                alt={dog.name}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  position: 'relative',
+                  zIndex: 2,
+                }}
+              />
+            </Box>
+
+            {/* Back side */}
+            <Box
+              sx={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                backfaceVisibility: 'hidden',
+                top: 0,
+                left: 0,
+                transform: 'rotateY(180deg)',
+                backgroundColor: theme.palette.background.paper,
+                color: theme.palette.text.primary,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                p: 1,
+                boxSizing: 'border-box',
+              }}
+            >
               <Typography variant="body2">Age: {dog.age}</Typography>
               <Typography variant="body2">ZIP: {dog.zip_code}</Typography>
               {location ? (
                 <>
-                  <Typography variant="body2">City: {location.city}</Typography>
-                  <Typography variant="body2">State: {location.state}</Typography>
-                  <Typography variant="body2">County: {location.county}</Typography>
+                  <Typography variant="body2">
+                    City: {location.city}
+                  </Typography>
+                  <Typography variant="body2">
+                    State: {location.state}
+                  </Typography>
+                  <Typography variant="body2">
+                    County: {location.county}
+                  </Typography>
                 </>
               ) : (
-                <Typography variant="body2">Loading...</Typography>
+                <Typography variant="body2">Loading…</Typography>
               )}
-            </div>
-          </div>
-        </div>
+            </Box>
+          </Box>
+        </Box>
 
-        {/* BOTTOM: Static area */}
-        <div style={bottomContent}>
-          <Typography variant="h6" noWrap>
-            {dog.name}
-          </Typography>
-          <Typography variant="body2" noWrap>
-            Breed: {dog.breed}
-          </Typography>
-          <Box display="flex" gap={1}>
-            <IconButton onClick={toggleFavorite} style={{ transition: 'color 0.3s ease' }}>
-              {isFavorited ? (
-                <FavoriteIcon style={{ color: 'red' }} />
-              ) : (
-                <FavoriteBorderIcon />
-              )}
+        {/* Bottom controls */}
+        <Box
+          sx={{
+            flex: 1,
+            p: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Box textAlign="center">
+            <Typography variant="subtitle1" noWrap>
+              {dog.name}
+            </Typography>
+            <Typography variant="body2" noWrap>
+              Breed: {dog.breed}
+            </Typography>
+          </Box>
+          <Box>
+            <IconButton onClick={toggleFavorite} sx={{ color: isFavorited ? 'error.main' : 'inherit' }}>
+              {isFavorited ? <FavoriteIcon /> : <FavoriteBorderIcon />}
             </IconButton>
-            {/* Enlarge Button -> ZoomOutMapIcon (diagonal arrows) */}
             <IconButton onClick={() => setModalOpen(true)}>
               <ZoomOutMapIcon />
             </IconButton>
           </Box>
-        </div>
-      </div>
+        </Box>
+      </Card>
 
-      {/* Dog Detail Modal */}
       <DogDetailModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

@@ -8,9 +8,19 @@ import {
   CardMedia,
   CardContent,
   Button,
+  Toolbar,
 } from '@mui/material';
+import NavigationBar from '../components/NavigationBar';
 
-const MatchResultPage: React.FC = () => {
+interface MatchResultPageProps {
+  mode: 'light' | 'dark';
+  onToggleDarkMode: () => void;
+}
+
+const MatchResultPage: React.FC<MatchResultPageProps> = ({
+  mode,
+  onToggleDarkMode,
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [matchedDog, setMatchedDog] = useState<Dog | null>(null);
@@ -32,40 +42,56 @@ const MatchResultPage: React.FC = () => {
 
   if (!matchedId) {
     return (
-      <Container>
-        <Typography variant="h5" color="error" marginY={4}>
-          No matched dog found. Go back and select favorites!
-        </Typography>
-        <Button variant="outlined" onClick={() => navigate('/search')}>Return to Search</Button>
-      </Container>
+      <>
+        <NavigationBar mode={mode} onToggleDarkMode={onToggleDarkMode} />
+        <Toolbar />
+        <Container>
+          <Typography variant="h5" color="error" marginY={4}>
+            No matched dog found. Go back and select favorites!
+          </Typography>
+          <Button variant="outlined" onClick={() => navigate('/search')}>
+            Return to Search
+          </Button>
+        </Container>
+      </>
     );
   }
 
   return (
-    <Container>
-      <Typography variant="h3" marginY={2}>Your Match!</Typography>
-      {matchedDog ? (
-        <Card style={{ maxWidth: 400, margin: 'auto' }}>
-          <CardMedia
-            component="img"
-            image={matchedDog.img}
-            alt={matchedDog.name}
-            height="300"
-          />
-          <CardContent>
-            <Typography variant="h5">{matchedDog.name}</Typography>
-            <Typography>Breed: {matchedDog.breed}</Typography>
-            <Typography>Age: {matchedDog.age}</Typography>
-            <Typography>ZIP: {matchedDog.zip_code}</Typography>
-          </CardContent>
-        </Card>
-      ) : (
-        <Typography>Loading matched dog...</Typography>
-      )}
-      <Button variant="contained" onClick={() => navigate('/search')} style={{ marginTop: '1rem' }}>
-        Back to Search
-      </Button>
-    </Container>
+    <>
+      <NavigationBar mode={mode} onToggleDarkMode={onToggleDarkMode} />
+      <Toolbar />
+      <Container>
+        <Typography variant="h3" marginY={2}>
+          Your Match!
+        </Typography>
+        {matchedDog ? (
+          <Card style={{ maxWidth: 400, margin: 'auto' }}>
+            <CardMedia
+              component="img"
+              image={matchedDog.img}
+              alt={matchedDog.name}
+              height="300"
+            />
+            <CardContent>
+              <Typography variant="h5">{matchedDog.name}</Typography>
+              <Typography>Breed: {matchedDog.breed}</Typography>
+              <Typography>Age: {matchedDog.age}</Typography>
+              <Typography>ZIP: {matchedDog.zip_code}</Typography>
+            </CardContent>
+          </Card>
+        ) : (
+          <Typography>Loading matched dog...</Typography>
+        )}
+        <Button
+          variant="contained"
+          onClick={() => navigate('/search')}
+          style={{ marginTop: '1rem' }}
+        >
+          Back to Search
+        </Button>
+      </Container>
+    </>
   );
 };
 
