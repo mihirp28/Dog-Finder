@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/test/static/js/main.72a0df35.js",
-    "index.html": "/test/index.html",
-    "main.72a0df35.js.map": "/test/static/js/main.72a0df35.js.map"
+    "main.js": "/Dog-Finder/static/js/main.6da3a79b.js",
+    "index.html": "/Dog-Finder/index.html",
+    "main.6da3a79b.js.map": "/Dog-Finder/static/js/main.6da3a79b.js.map"
   },
   "entrypoints": [
-    "static/js/main.72a0df35.js"
+    "static/js/main.6da3a79b.js"
   ]
 }
