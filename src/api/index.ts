@@ -86,7 +86,7 @@ export async function matchDogs(ids: string[]): Promise<string> {
   return data.match; // returns the matched dog's ID
 }
 
-// --- Add Location API support below ---
+//Add Location API support below
 
 export interface Location {
   zip_code: string;
@@ -107,3 +107,4 @@ export async function getLocations(zipCodes: string[]): Promise<Location[]> {
   const { data } = await apiClient.post<Location[]>('/locations', zipCodes);
   return data;
 }
+

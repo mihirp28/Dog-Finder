@@ -54,7 +54,7 @@ const MatchResultPage: React.FC<MatchResultPageProps> = ({
           </Button>
         </Container>
       </>
-    );
+    ); 
   }
 
   return (
