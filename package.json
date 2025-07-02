@@ -1,6 +1,6 @@
 {
   "name": "dog-finder",
-  "homepage": "https://mihirp28.github.io/test",
+  "homepage":"https://mihirp28.github.io/Dog-Finder/",  
   "version": "0.1.0",
   "private": true,
   "dependencies": {
